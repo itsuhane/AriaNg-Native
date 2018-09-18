@@ -1,14 +1,17 @@
 const os = require('os');
 const electron = require('electron');
 const electronLocalshortcut = require('electron-localshortcut');
+const childProcess = require('child_process');
+const fs = require('fs');
 
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
-const Menu = electron.Menu;
-const Tray = electron.Tray;
+// const Menu = electron.Menu;
+// const Tray = electron.Tray;
 
 var mainWindow = null;
-var tray = null;
+// var tray = null;
+var ariaProcess = null;
 
 app.on('window-all-closed', function () {
     app.quit();
@@ -57,10 +60,21 @@ app.on('ready', function () {
     mainWindow.loadURL('file://' + __dirname + '/app/index.html');
 
     mainWindow.once('ready-to-show', function () {
+        ariaProcess = childProcess.spawn('/usr/local/bin/aria2c', [], {
+            stdio: [
+                'pipe',
+                fs.openSync('/Users/jinyu/.aria2/stdout.log', 'w'),
+                fs.openSync('/Users/jinyu/.aria2/stderr.log', 'w')
+            ]
+        });
+        ariaProcess.on('exit', function() {
+            ariaProcess = null;
+        });
         mainWindow.show()
     });
 
     mainWindow.on('closed', function () {
+        ariaProcess.kill('SIGINT');
         mainWindow = null;
     });
 });
